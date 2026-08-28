@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>My Ads App</title>
+    
+    <!-- Telegram Web App SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <!-- 🔴 ১. নিচের ৩টি লাইনে আপনার Monetag এর ৩টি আলাদা Zone ID বসান -->
+    <!-- লক্ষ্য করুন: data-zone এর জায়গায় শুধু সংখ্যা এবং data-sdk এর জায়গায় 'show_' এর পর সংখ্যাটি বসাবেন -->
+    
+    <!-- ১ম Zone -->
+    <script src='//libtl.com/sdk.js' data-zone='11605469' data-sdk='11605469'></script>
+    
+    <!-- ২য় Zone -->
+    <script src='//libtl.com/sdk.js' data-zone='11674672' data-sdk='11674672'></script>
+    
+    <!-- ৩য় Zone -->
+    <script src='//libtl.com/sdk.js' data-zone='11601894' data-sdk='11601894'></script>
+
+    <!-- Font Awesome (Icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-color: #000000;
+            --card-bg: #1c1c1e;
+            --primary: #007aff;
+            --success: #34c759;
+            --danger: #ff3b30;
+            --text-main: #ffffff;
+        }
+
+        body {
+            font-family: sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Profile Design */
+        .profile-card {
+            display: flex;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            width: 90%;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--primary);
+        }
+        .profile-pic {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: #333;
+            margin-right: 15px;
+        }
+        .user-info h3 { margin: 0; font-size: 16px; }
+        .user-info p { margin: 0; font-size: 12px; color: #888; }
+
+        /* Statistics Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 95%;
+            margin-bottom: 20px;
+        }
+        .stat-box {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-label { font-size: 11px; color: #aaa; text-transform: uppercase; }
+        .stat-num { font-size: 22px; font-weight: bold; margin-top: 5px; }
+        .full-width { grid-column: span 2; background: #222; }
+
+        /* Main Monitor */
+        .monitor {
+            background: var(--card-bg);
+            width: 90%;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+        }
+        .timer-big {
+            font-size: 50px;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 10px 0;
+        }
+        .status-text { font-size: 14px; color: #ccc; margin-bottom: 10px; }
+        
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--success);
+            width: 0%;
+            transition: width 0.5s linear;
+        }
+
+        /* Buttons */
+        .btn-area { width: 95%; display: flex; gap: 10px; }
+        button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+        }
+        .btn-start { background: var(--success); }
+        .btn-stop { background: var(--danger); display: none; }
+        
+        /* Loading Overlay */
+        #loadingOverlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Loading Screen -->
+    <div id="loadingOverlay">Processing...</div>
+
+    <!-- User Profile Section -->
+    <div class="profile-card">
+        <img src="" alt="" class="profile-pic" id="pPic" style="display:none">
+        <div class="profile-pic" id="pPlaceholder"></div>
+        <div class="user-info">
+            <h3 id="uName">Guest User</h3>
+            <p id="uUser">@username</p>
+        </div>
+    </div>
+
+    <!-- Stats Section -->
+    <div class="stats-grid">
+        <div class="stat-box">
+            <div class="stat-label">Today</div>
+            <div class="stat-num" style="color:#4caf50" id="sToday">0</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Yesterday</div>
+            <div class="stat-num" id="sYest">0</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">This Week</div>
+            <div class="stat-num" id="sWeek">0</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">This Month</div>
+            <div class="stat-num" id="sMonth">0</div>
+        </div>
+        <div class="stat-box full-width">
+            <div class="stat-label">Total Lifetime</div>
+            <div class="stat-num" style="color:#ff9800" id="sTotal">0</div>
+        </div>
+    </div>
+
+    <!-- Monitor Section -->
+    <div class="monitor">
+        <div class="status-text" id="statusMsg">System Idle</div>
+        <div class="timer-big" id="timer">00</div>
+        <div class="progress-track">
+            <div class="progress-fill" id="bar"></div>
+        </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="btn-area">
+        <button class="btn-start" id="btnStart" onclick="startEngine()">
+            <i class="fas fa-play"></i> START ADS
+        </button>
+        <button class="btn-stop" id="btnStop" onclick="stopEngine()">
+            <i class="fas fa-stop"></i> STOP ADS
+        </button>
+    </div>
+
+    <script>
+        // 🔴 ২. নিচের CONFIG সেকশনে আপনার তথ্যগুলো বসান
+        const CONFIG = {
+            // নিচে 'YOUR_ZONE_ID_1' কেটে আপনার আসল Zone ID বসান (Single Quote '' এর ভেতরে রাখবেন)
+            zones: [
+                '11605469', 
+                '11674672', 
+                '11601894'
+            ],
+            
+            adTime: 18,     // বিজ্ঞাপন কত সেকেন্ড চলবে (ডিফল্ট: 18)
+            safetyTime: 3   // হোম পেজে কত সেকেন্ড অপেক্ষা করবে (ডিফল্ট: 3)
+        };
+
+        // --- নিচের কোডগুলোতে হাত দেওয়ার প্রয়োজন নেই (সিস্টেম লজিক) ---
+
+        const Stats = {
+            data: { total: 0, today: 0, yest: 0, week: 0, month: 0, date: '', wStart: 0, mStart: 0 },
+            
+            init() {
+                let saved = localStorage.getItem('my_ads_stats_v2');
+                if(saved) this.data = JSON.parse(saved);
+                
+                const now = new Date();
+                const today = now.toDateString();
+                const time = now.getTime();
+
+                // Daily Reset
+                if(this.data.date !== today) {
+                    this.data.yest = this.data.today;
+                    this.data.today = 0;
+                    this.data.date = today;
+                }
+                // Weekly Reset (7 days)
+                if(time - this.data.wStart > 604800000) { this.data.week = 0; this.data.wStart = time; }
+                // Monthly Reset (30 days)
+                if(time - this.data.mStart > 2592000000) { this.data.month = 0; this.data.mStart = time; }
+
+                this.save();
+                this.updateUI();
+            },
+            
+            add() {
+                this.data.total++;
+                this.data.today++;
+                this.data.week++;
+                this.data.month++;
+                this.save();
+            },
+            
+            save() { localStorage.setItem('my_ads_stats_v2', JSON.stringify(this.data)); },
+            
+            updateUI() {
+                document.getElementById('sToday').innerText = this.data.today;
+                document.getElementById('sYest').innerText = this.data.yest;
+                document.getElementById('sWeek').innerText = this.data.week;
+                document.getElementById('sMonth').innerText = this.data.month;
+                document.getElementById('sTotal').innerText = this.data.total;
+            }
+        };
+
+        // Telegram Data Loader
+        try {
+            const tg = window.Telegram.WebApp;
+            tg.expand();
+            const user = tg.initDataUnsafe.user;
+            if(user) {
+                document.getElementById('uName').innerText = user.first_name + (user.last_name ? " " + user.last_name : "");
+                document.getElementById('uUser').innerText = user.username ? "@" + user.username : "No Username";
+                if(user.photo_url) {
+                    document.getElementById('pPic').src = user.photo_url;
+                    document.getElementById('pPic').style.display = 'block';
+                    document.getElementById('pPlaceholder').style.display = 'none';
+                }
+            }
+        } catch(e) { console.log("Not in Telegram"); }
+
+        // System Engine
+        window.onload = function() {
+            Stats.init();
+            
+            const isRunning = localStorage.getItem('engine_running') === 'true';
+            
+            if(isRunning) {
+                document.getElementById('btnStart').style.display = 'none';
+                document.getElementById('btnStop').style.display = 'block';
+                runSequence();
+            } else {
+                document.getElementById('btnStart').style.display = 'block';
+                document.getElementById('btnStop').style.display = 'none';
+                document.getElementById('statusMsg').innerText = "System Idle";
+            }
+        };
+
+        function startEngine() {
+            localStorage.setItem('engine_running', 'true');
+            if(!localStorage.getItem('ad_index')) localStorage.setItem('ad_index', '0');
+            showLoading();
+            location.reload();
+        }
+
+        function stopEngine() {
+            localStorage.setItem('engine_running', 'false');
+            document.getElementById('statusMsg').innerText = "Stopping...";
+            showLoading();
+            setTimeout(() => location.reload(), 1000);
+        }
+
+        function runSequence() {
+            // Phase 1: Safety Wait
+            let safetyTimer = CONFIG.safetyTime;
+            updateStatus(`Wait ${safetyTimer}s...`, 0, CONFIG.safetyTime);
+            
+            const sInt = setInterval(() => {
+                safetyTimer--;
+                updateStatus(`Wait ${safetyTimer}s...`, CONFIG.safetyTime - safetyTimer, CONFIG.safetyTime);
+                document.getElementById('timer').innerText = safetyTimer;
+                
+                if(safetyTimer <= 0) {
+                    clearInterval(sInt);
+                    triggerAd();
+                }
+            }, 1000);
+        }
+
+        function triggerAd() {
+            let idx = parseInt(localStorage.getItem('ad_index') || '0');
+            let zone = CONFIG.zones[idx];
+            
+            // Call SDK Function
+            document.getElementById('statusMsg').innerText = `Watching Ad...`;
+            const fn = `show_${zone}`;
+            
+            if(window[fn]) {
+                window[fn]().catch(e => console.log("Ad Error:", e));
+            } else {
+                console.log("Check Zone ID in Code");
+            }
+            
+            // Ad Timer
+            let adTimer = CONFIG.adTime;
+            document.getElementById('bar').style.transition = `width ${CONFIG.adTime}s linear`;
+            setTimeout(() => document.getElementById('bar').style.width = '100%', 100);
+            
+            const aInt = setInterval(() => {
+                adTimer--;
+                document.getElementById('timer').innerText = adTimer;
+                
+                if(adTimer <= 0) {
+                    clearInterval(aInt);
+                    cycleComplete(idx);
+                }
+            }, 1000);
+        }
+
+        function cycleComplete(currentIdx) {
+            document.getElementById('statusMsg').innerText = "Ad Finished. Reloading...";
+            Stats.add();
+            
+            let next = currentIdx + 1;
+            if(next >= CONFIG.zones.length) next = 0;
+            localStorage.setItem('ad_index', next);
+            
+            setTimeout(() => location.reload(), 500);
+        }
+
+        function updateStatus(msg, current, max) {
+            document.getElementById('statusMsg').innerText = msg;
+            let pct = (current / max) * 100;
+            document.getElementById('bar').style.width = pct + "%";
+        }
+        
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+    </script>
+</body>
+  </html>
